@@ -175,7 +175,7 @@ class EA:
             partner2 = self.population[i2]
             a = np.random.uniform(0.001, 2)
             mutation = a * (partner1 - partner2)
-            for param in range(4):
+            for param in range(N_VARS):
                 # To make sure we don't exit the domain we set the mutation to 0 if it would cause
                 # the parameter to exit the domain
                 if ind[param] + mutation[param] < DOM_L or \
@@ -200,14 +200,14 @@ class EA:
             exit()
 
     def fitness_based_selection(self, children):
-        """Selects the best-performing 50% of the population and the offspring to continue into the next generation
+        """Selects the best-performing 25% of the population and the offspring to continue into the next generation
         and randomly samples the remainder"""
         new_gen = np.empty([0, N_VARS])
         new_gen_f = np.empty(0)
         concat_pop = np.concatenate((self.population, children))
         concat_f = np.concatenate((self.f, self.evaluate(children)))
         order = np.flip(np.argsort(concat_f))
-        for i in range(np.floor_divide(len(order), 2)):
+        for i in range(np.floor_divide(len(order), 4)):
             new_gen = np.append(new_gen, [concat_pop[order[i]]], axis=0)
             new_gen_f = np.append(new_gen_f, [concat_f[order[i]]], axis=0)
         rest = np.random.choice(order[np.floor_divide(len(order), 2):], self.pop_size-len(new_gen), replace=False)
@@ -271,27 +271,28 @@ def plot_whole(generations, mean, lower, upper):
                 dpi=300, bbox_inches='tight')
     plt.show()
 
+
 def plot_best(self):
-        """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
-        t = np.arange(self.generations + 1)
-        fig, ax = plt.subplots(1)
-        ax.plot(t, self.upper, label='Best performing individual')
-        ax.legend(loc='lower right')
-        ax.set_xlabel('Generations')
-        ax.set_ylabel('Fitness')
-        ax.set_title('Best individuals of %s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
-        ax.grid()
-        plt.savefig('individual_assignment/' + experiment_name + '_plot_best.png', dpi=300, bbox_inches='tight')
-        plt.show()
+    """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
+    t = np.arange(self.generations + 1)
+    fig, ax = plt.subplots(1)
+    ax.plot(t, self.upper, label='Best performing individual')
+    ax.legend(loc='lower right')
+    ax.set_xlabel('Generations')
+    ax.set_ylabel('Fitness')
+    ax.set_title('Best individuals of %s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
+    ax.grid()
+    plt.savefig('individual_assignment/' + experiment_name + '_plot_best.png', dpi=300, bbox_inches='tight')
+    plt.show()
 
 
 # Set hyperparameters
-population_size = 10
-generations = 2
-n_exp = 2
+population_size = 25
+generations = 10
+n_exp = 1
 standard_deviation = 0.1  # The factor with which the mutation range is determined
-parent_selection_mechanism = 'RS'  # Either RS for random selection or TS for tournament selection
-recombination_operator = 'PA'  # Either UC for uniform crossover or PA for partial arithmetic
+parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
+recombination_operator = 'UC'  # Either UC for uniform crossover or PA for partial arithmetic
 mutation_operator = 'RP'  # Either RP for random perturbation or DM for differential mutation
 survivor_selection_mechanism = 'FS'  # Either GS for generational selection or FS for fitness-based selection
 
@@ -314,11 +315,4 @@ upper = np.mean(upper_list, axis=0)
 lower = np.mean(lower_list, axis=0)
 
 plot_whole(generations, mean, lower, upper)
-
-
-
-"""#Have the best solution play against a selected enemy
-for en in range(1, 9):
-    ENV.update_parameter('enemies',[en])
-    sol = np.loadtxt('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt")
-    ENV.play(sol)"""
+print(upper)
