@@ -16,13 +16,14 @@ if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-experiment_name = 'individual_assignment'
+experiment_name = 'specialist_assignment_1'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
+ENEMY = 2
 ENV = Environment(experiment_name=experiment_name,
-                  enemies=[2],
+                  enemies=[ENEMY],
                   playermode="ai",
                   player_controller=player_controller(N_HIDDEN_NEURONS),
                   enemymode="static",
@@ -51,10 +52,9 @@ class EA:
         self.f = self.evaluate(self.population)
 
         # Variables for plotting
-        plot_f = self.f[self.f != np.inf]
-        self.mean = [np.mean(plot_f)]
-        self.upper = [np.amax(plot_f)]
-        self.lower = [np.amin(plot_f)]
+        self.mean = [np.mean(self.f)]
+        self.upper = [np.amax(self.f)]
+        self.lower = [np.amin(self.f)]
 
         # Best candidate to be tested at the end of the experiment
         self.best_candidate = None
@@ -220,6 +220,7 @@ class EA:
     def evolve(self):
         """Runs the algorithm for each generation and returns the fitness of the final generation
         as well as plotting the relevant graphs"""
+
         for gen in range(self.generations):
             parents = self.parent_selection()
             children = self.recombination(parents)
@@ -232,9 +233,6 @@ class EA:
             self.upper.append(np.amax(plot_f))
             self.lower.append((np.amin(plot_f)))
 
-        self.plot_whole()
-        self.plot_best()
-
         if self.SSM == 'GS':
             # Sort the population by the fitness and select the best performing one
             order = self.f.argsort()
@@ -245,12 +243,10 @@ class EA:
         elif self.SSM == 'FS':
             # Using fitness based selection, the best individual is always selected first
             self.best_candidate = self.population[0]
-            print(self.best_candidate)
 
         # Save the best solution of the last generation for testing
-        f = open('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt", 'w')
-        np.savetxt('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt",\
-                   self.best_candidate)
+        np.savetxt(experiment_name + '/solutions/best_candidate_enemy' + str(ENEMY) + '_' + str(experiment)
+                   + '.txt', self.best_candidate)
 
     def simulation(self, env, x):
         f, p, e, t = env.play(pcont=x)
@@ -259,21 +255,23 @@ class EA:
     def evaluate(self, x):
         return np.array(list(map(lambda y: self.simulation(ENV, y), x)))
 
-    def plot_whole(self):
-        """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
-        t = np.arange(self.generations + 1)
-        fig, ax = plt.subplots(1)
-        ax.plot(t, self.mean, label='Mean fitness of the population', color='blue')
-        ax.fill_between(t, self.lower, self.upper, label='Range of the population')
-        ax.legend(loc='lower right')
-        ax.set_xlabel('Generations')
-        ax.set_ylabel('Fitness')
-        ax.set_title('%s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
-        ax.grid()
-        plt.savefig('individual_assignment/' + experiment_name + '_plot_whole.png', dpi=300, bbox_inches='tight')
-        plt.show()
 
-    def plot_best(self):
+def plot_whole(generations, mean, lower, upper):
+    """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
+    t = np.arange(generations + 1)
+    fig, ax = plt.subplots(1)
+    ax.plot(t, mean, label='Mean fitness of the population', color='blue')
+    ax.fill_between(t, lower, upper, label='Range of the population')
+    ax.legend(loc='lower right')
+    ax.set_xlabel('Generations')
+    ax.set_ylabel('Fitness')
+    ax.set_title('Fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
+    ax.grid()
+    plt.savefig(experiment_name + '/enemy' + str(ENEMY) + '_plot_whole.png',
+                dpi=300, bbox_inches='tight')
+    plt.show()
+
+def plot_best(self):
         """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
         t = np.arange(self.generations + 1)
         fig, ax = plt.subplots(1)
@@ -288,19 +286,36 @@ class EA:
 
 
 # Set hyperparameters
-population_size = 5
-generations = 1
+population_size = 10
+generations = 2
+n_exp = 2
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'RS'  # Either RS for random selection or TS for tournament selection
 recombination_operator = 'PA'  # Either UC for uniform crossover or PA for partial arithmetic
 mutation_operator = 'RP'  # Either RP for random perturbation or DM for differential mutation
 survivor_selection_mechanism = 'FS'  # Either GS for generational selection or FS for fitness-based selection
 
+mean_list = []
+upper_list = []
+lower_list = []
+best_individuals = []
+for experiment in range(n_exp):
+    ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism, recombination_operator,
+            mutation_operator, survivor_selection_mechanism)
+    ea.evolve()
 
-ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism, recombination_operator,
-        mutation_operator, survivor_selection_mechanism)
+    mean_list.append(ea.mean)
+    upper_list.append(ea.upper)
+    lower_list.append(ea.lower)
+    best_individuals.append(ea.best_candidate)
 
-ea.evolve()
+mean = np.mean(mean_list, axis=0)
+upper = np.mean(upper_list, axis=0)
+lower = np.mean(lower_list, axis=0)
+
+plot_whole(generations, mean, lower, upper)
+
+
 
 """#Have the best solution play against a selected enemy
 for en in range(1, 9):
