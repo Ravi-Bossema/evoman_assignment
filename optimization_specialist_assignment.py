@@ -56,6 +56,9 @@ class EA:
         self.upper = [np.amax(plot_f)]
         self.lower = [np.amin(plot_f)]
 
+        # Best candidate to be tested at the end of the experiment
+        self.best_candidate = None
+
     # Parent Selection
     def parent_selection(self):
         """Returns a list containing sets of two parents in accordance with the chosen parent selection mechanism"""
@@ -228,10 +231,26 @@ class EA:
             self.mean.append(np.mean(plot_f))
             self.upper.append(np.amax(plot_f))
             self.lower.append((np.amin(plot_f)))
-        print(self.f)
-        print(np.amin(self.f))
+
         self.plot_whole()
         self.plot_best()
+
+        if self.SSM == 'GS':
+            # Sort the population by the fitness and select the best performing one
+            order = self.f.argsort()
+            self.f = self.f[order[::-1]]
+            self.population = self.population[order[::-1]]
+            self.best_candidate = self.population[0]
+
+        elif self.SSM == 'FS':
+            # Using fitness based selection, the best individual is always selected first
+            self.best_candidate = self.population[0]
+            print(self.best_candidate)
+
+        # Save the best solution of the last generation for testing
+        f = open('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt", 'w')
+        np.savetxt('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt",\
+                   self.best_candidate)
 
     def simulation(self, env, x):
         f, p, e, t = env.play(pcont=x)
@@ -241,7 +260,7 @@ class EA:
         return np.array(list(map(lambda y: self.simulation(ENV, y), x)))
 
     def plot_whole(self):
-        """Plots the mean fitness and fitness range of each generation"""
+        """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
         t = np.arange(self.generations + 1)
         fig, ax = plt.subplots(1)
         ax.plot(t, self.mean, label='Mean fitness of the population', color='blue')
@@ -251,10 +270,11 @@ class EA:
         ax.set_ylabel('Fitness')
         ax.set_title('%s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
         ax.grid()
+        plt.savefig('individual_assignment/' + experiment_name + '_plot_whole.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_best(self):
-        """Plots the best-performing individual's fitness for each generation"""
+        """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
         t = np.arange(self.generations + 1)
         fig, ax = plt.subplots(1)
         ax.plot(t, self.upper, label='Best performing individual')
@@ -263,20 +283,27 @@ class EA:
         ax.set_ylabel('Fitness')
         ax.set_title('Best individuals of %s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
         ax.grid()
+        plt.savefig('individual_assignment/' + experiment_name + '_plot_best.png', dpi=300, bbox_inches='tight')
         plt.show()
 
 
 # Set hyperparameters
-population_size = 20
-generations = 10
+population_size = 5
+generations = 1
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'RS'  # Either RS for random selection or TS for tournament selection
 recombination_operator = 'PA'  # Either UC for uniform crossover or PA for partial arithmetic
 mutation_operator = 'RP'  # Either RP for random perturbation or DM for differential mutation
-survivor_selection_mechanism = 'GS'  # Either GS for generational selection or FS for fitness-based selection
+survivor_selection_mechanism = 'FS'  # Either GS for generational selection or FS for fitness-based selection
 
 
 ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism, recombination_operator,
         mutation_operator, survivor_selection_mechanism)
 
 ea.evolve()
+
+"""#Have the best solution play against a selected enemy
+for en in range(1, 9):
+    ENV.update_parameter('enemies',[en])
+    sol = np.loadtxt('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt")
+    ENV.play(sol)"""
