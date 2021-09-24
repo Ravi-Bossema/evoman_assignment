@@ -7,6 +7,7 @@ from demo_controller import player_controller
 import time
 import numpy as np
 from math import fabs,sqrt
+import statistics
 import glob, os
 from environment import Environment
 
@@ -175,11 +176,10 @@ class EA:
             partner2 = self.population[i2]
             a = np.random.uniform(0.001, 2)
             mutation = a * (partner1 - partner2)
-            for param in range(4):
+            for param in range(N_VARS):
                 # To make sure we don't exit the domain we set the mutation to 0 if it would cause
                 # the parameter to exit the domain
-                if ind[param] + mutation[param] < DOM_L or \
-                        ind[param] + mutation[param] > DOM_U:
+                if ind[param] + mutation[param] < DOM_L or ind[param] + mutation[param] > DOM_U:
                     mutation[param] = 0
             ind += mutation
             children[i] = ind
@@ -271,23 +271,24 @@ def plot_whole(generations, mean, lower, upper):
                 dpi=300, bbox_inches='tight')
     plt.show()
 
+
 def plot_best(self):
-        """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
-        t = np.arange(self.generations + 1)
-        fig, ax = plt.subplots(1)
-        ax.plot(t, self.upper, label='Best performing individual')
-        ax.legend(loc='lower right')
-        ax.set_xlabel('Generations')
-        ax.set_ylabel('Fitness')
-        ax.set_title('Best individuals of %s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
-        ax.grid()
-        plt.savefig('individual_assignment/' + experiment_name + '_plot_best.png', dpi=300, bbox_inches='tight')
-        plt.show()
+    """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
+    t = np.arange(self.generations + 1)
+    fig, ax = plt.subplots(1)
+    ax.plot(t, self.upper, label='Best performing individual')
+    ax.legend(loc='lower right')
+    ax.set_xlabel('Generations')
+    ax.set_ylabel('Fitness')
+    ax.set_title('Best individuals of %s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
+    ax.grid()
+    plt.savefig('individual_assignment/' + experiment_name + '_plot_best.png', dpi=300, bbox_inches='tight')
+    plt.show()
 
 
 # Set hyperparameters
-population_size = 10
-generations = 2
+population_size = 20
+generations = 10
 n_exp = 2
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'RS'  # Either RS for random selection or TS for tournament selection
@@ -315,10 +316,18 @@ lower = np.mean(lower_list, axis=0)
 
 plot_whole(generations, mean, lower, upper)
 
+# Have the best solution play against a selected enemy
+mean_individual_gain = []
 
+for candidate in range(n_exp):
+    individual_gain = []
+    for i in range(5):
+        sol = np.loadtxt(experiment_name + '/solutions/best_candidate_enemy' + str(ENEMY) + '_' + str(candidate)
+                         + '.txt')
+        result = ENV.play(sol)
+        # Individual gain is defined by player energy - enemy energy
+        individual_gain.append(result[1] - result[2])
+    mean_individual_gain.append(statistics.mean(individual_gain))
 
-"""#Have the best solution play against a selected enemy
-for en in range(1, 9):
-    ENV.update_parameter('enemies',[en])
-    sol = np.loadtxt('individual_assignment/solutions_assignment/' + experiment_name + "_best_candidate.txt")
-    ENV.play(sol)"""
+# Add boxplot here
+print(mean_individual_gain)
