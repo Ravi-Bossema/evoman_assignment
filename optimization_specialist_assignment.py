@@ -21,7 +21,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMY = 2
+ENEMY = 1
 ENV = Environment(experiment_name=experiment_name,
                   enemies=[ENEMY],
                   playermode="ai",
@@ -162,6 +162,8 @@ class EA:
         self.best_candidate = self.population[0]
 
         # Save the best solution of the last generation for testing
+        if not os.path.exists(experiment_name + '/solutions_enemy' + str(ENEMY)):
+            os.makedirs(experiment_name + '/solutions_enemy' + str(ENEMY))
         np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMY) + '/best_candidate_' + str(experiment)
                    + '.txt', self.best_candidate)
 
@@ -177,12 +179,12 @@ def plot_whole(gen, m, u):
     """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
     t = np.arange(gen + 1)
     fig, ax = plt.subplots(1)
-    ax.plot(t, m, label='Mean fitness of the population')
-    ax.plot(t, u, label='Fitness of the best individual')
+    ax.plot(t, m, label='Mean')
+    ax.plot(t, u, label='Maximum')
     ax.legend(loc='lower right')
     ax.set_xlabel('Generations')
     ax.set_ylabel('Fitness')
-    ax.set_title('Fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
+    ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
     ax.grid()
     plt.savefig(experiment_name + '/plot_enemy' + str(ENEMY) + '.png',
                 dpi=300, bbox_inches='tight')
@@ -191,8 +193,8 @@ def plot_whole(gen, m, u):
 
 # Set hyperparameters
 population_size = 10
-generations = 2
-n_exp = 1
+generations = 3
+n_exp = 5
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
 
