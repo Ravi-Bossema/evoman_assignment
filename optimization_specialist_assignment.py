@@ -22,7 +22,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMY = 1
+ENEMY = 8
 ENV = Environment(experiment_name=experiment_name,
                   enemies=[ENEMY],
                   playermode="ai",
@@ -237,8 +237,8 @@ bp = ax.boxplot(mean_individual_gain, patch_artist=True)
 for patch in bp['boxes']:
     patch.set_facecolor('blue')
 ax.set_xticklabels(['EA 1'])
-ax.set_ylim([-150, 150])
-ax.set_ylabel('Fitness')
+ax.set_ylim([-50, 100])
+ax.set_ylabel('Individual gain')
 ax.set_title('Individual gain of best individuals over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
 ax.grid()
 plt.savefig(experiment_name + '/enemy' + str(ENEMY) + '_mean_individual_gain.png', dpi=300, bbox_inches='tight')
