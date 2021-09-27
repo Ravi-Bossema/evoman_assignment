@@ -5,9 +5,9 @@ from demo_controller import player_controller
 
 # imports other libs
 import time
+import statistics
 import numpy as np
 from math import fabs,sqrt
-import statistics
 import glob, os
 from environment import Environment
 
@@ -17,12 +17,12 @@ if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-experiment_name = 'specialist_assignment_1'
+experiment_name = 'specialist_assignment_TS'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMY = 2
+ENEMY = 1
 ENV = Environment(experiment_name=experiment_name,
                   enemies=[ENEMY],
                   playermode="ai",
@@ -37,15 +37,12 @@ DOM_U = 1
 
 
 class EA:
-    def __init__(self, pop_size, std, generations, par, recom, mut, sur):
+    def __init__(self, pop_size, std, generations, par):
         self.pop_size = pop_size
         self.std = std
         self.generations = generations
 
         self.PSM = par
-        self.RO = recom
-        self.MO = mut
-        self.SSM = sur
 
         # Initialize population
         self.population = np.random.uniform(DOM_L, DOM_U, (pop_size, N_VARS))
@@ -100,19 +97,7 @@ class EA:
             parents.append(couple)
         return parents
 
-    # Recombination
     def recombination(self, parents):
-        """Returns a list of children from the parents in accordance with the chosen recombination operator"""
-        if self.RO == 'UC':
-            return self.uniform_crossover(parents)
-        elif self.RO == 'PA':
-            return self.partial_arithmetic(parents)
-        else:
-            print(
-                "Please choose a recombination_operator of UC for uniform crossover or PA for partial arithmetic")
-            exit()
-
-    def uniform_crossover(self, parents):
         """Returns a list of children after recombining the parents using uniform crossover"""
         children = []
         for i in range(len(parents)):
@@ -124,31 +109,7 @@ class EA:
             children.append(child2)
         return children
 
-    def partial_arithmetic(self, parents):
-        """Returns a list of children after recombining the parents using partial arithmetic"""
-        children = []
-        for i in range(len(parents)):
-            couple = parents[i]
-            mask = np.random.choice([0, 1], N_VARS)
-            child1 = mask*couple[0] + (1-mask)/2*couple[0] + (1-mask)/2*couple[1]
-            child2 = mask*couple[1] + (1-mask)/2*couple[0] + (1-mask)/2*couple[1]
-            children.append(child1)
-            children.append(child2)
-        return children
-
-    # Mutation
     def mutation(self, children):
-        """Generates and returns a proposal population for the next generation
-        based on the current generation's population pop and the chosen mutation operator"""
-        if self.MO == 'RP':
-            return self.random_perturbation(children)
-        elif self.MO == 'DM':
-            return self.differential_mutation(children)
-        else:
-            print("Please choose a mutation_operator of RP for random perturbation or DM for differential mutation")
-            exit()
-
-    def random_perturbation(self, children):
         """Generates a random mutation for each parameter of each individual and adds this mutation
         to said parameter.
         Returns the mutated population pop"""
@@ -165,49 +126,15 @@ class EA:
             children[i] = ind
         return children
 
-    def differential_mutation(self, children):
-        """Generates a mutated population by sampling two different partners for each individual
-        and adding the difference between said partners to the individual.
-        Returns the mutated population pop"""
-        for i in range(len(children)):
-            ind = children[i]
-            i1, i2 = np.random.randint(0, self.pop_size, 2)
-            partner1 = self.population[i1]
-            partner2 = self.population[i2]
-            a = np.random.uniform(0.001, 2)
-            mutation = a * (partner1 - partner2)
-            for param in range(N_VARS):
-                # To make sure we don't exit the domain we set the mutation to 0 if it would cause
-                # the parameter to exit the domain
-                if ind[param] + mutation[param] < DOM_L or ind[param] + mutation[param] > DOM_U:
-                    mutation[param] = 0
-            ind += mutation
-            children[i] = ind
-        return children
-
-    # Survivor Selection
     def survivor_selection(self, children):
-        """Selects and returns the population of the next generation in accordance with the
-        chosen survival selection mechanism"""
-        if self.SSM == 'GS':
-            self.f = self.evaluate(children)
-            return children
-        elif self.SSM == 'FS':
-            return self.fitness_based_selection(children)
-        else:
-            print("Please choose a survivor_selection_mechanism of GS for generational selection "
-                  "or FS for fitness-based selection")
-            exit()
-
-    def fitness_based_selection(self, children):
-        """Selects the best-performing 33% of the population and the offspring to continue into the next generation
+        """Selects the best-performing 25% of the population and the offspring to continue into the next generation
         and randomly samples the remainder"""
         new_gen = np.empty([0, N_VARS])
         new_gen_f = np.empty(0)
         concat_pop = np.concatenate((self.population, children))
         concat_f = np.concatenate((self.f, self.evaluate(children)))
         order = np.flip(np.argsort(concat_f))
-        for i in range(np.floor_divide(len(order), 2)):
+        for i in range(np.floor_divide(len(order), 4)):
             new_gen = np.append(new_gen, [concat_pop[order[i]]], axis=0)
             new_gen_f = np.append(new_gen_f, [concat_f[order[i]]], axis=0)
         rest = np.random.choice(order[np.floor_divide(len(order), 2):], self.pop_size-len(new_gen), replace=False)
@@ -233,19 +160,12 @@ class EA:
             self.upper.append(np.amax(plot_f))
             self.lower.append((np.amin(plot_f)))
 
-        if self.SSM == 'GS':
-            # Sort the population by the fitness and select the best performing one
-            order = self.f.argsort()
-            self.f = self.f[order[::-1]]
-            self.population = self.population[order[::-1]]
-            self.best_candidate = self.population[0]
-
-        elif self.SSM == 'FS':
-            # Using fitness based selection, the best individual is always selected first
-            self.best_candidate = self.population[0]
+        self.best_candidate = self.population[0]
 
         # Save the best solution of the last generation for testing
-        np.savetxt(experiment_name + '/solutions/best_candidate_enemy' + str(ENEMY) + '_' + str(experiment)
+        if not os.path.exists(experiment_name + '/solutions_enemy' + str(ENEMY)):
+            os.makedirs(experiment_name + '/solutions_enemy' + str(ENEMY))
+        np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMY) + '/best_candidate_' + str(experiment)
                    + '.txt', self.best_candidate)
 
     def simulation(self, env, x):
@@ -256,67 +176,47 @@ class EA:
         return np.array(list(map(lambda y: self.simulation(ENV, y), x)))
 
 
-def plot_whole(generations, mean, lower, upper):
+def plot_whole(gen, m, u):
     """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
-    t = np.arange(generations + 1)
+    t = np.arange(gen + 1)
     fig, ax = plt.subplots(1)
-    ax.plot(t, mean, label='Mean fitness of the population', color='blue')
-    ax.fill_between(t, lower, upper, label='Range of the population')
+    ax.plot(t, m, label='Mean')
+    ax.plot(t, u, label='Maximum')
     ax.legend(loc='lower right')
     ax.set_xlabel('Generations')
-    ax.set_xticks(np.arange(0, generations, 1))
-    ax.set_yticks(np.arange(0, 110, 10))
     ax.set_ylabel('Fitness')
-    ax.set_title('Fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
+    ax.set_xticks(np.arange(0, generations + 1, 1))
+    ax.set_yticks(np.arange(0, 110, 10))
+    ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
     ax.grid()
-    plt.savefig(experiment_name + '/enemy' + str(ENEMY) + '_plot_whole.png',
+    plt.savefig(experiment_name + '/plot_enemy' + str(ENEMY) + '.png',
                 dpi=300, bbox_inches='tight')
     plt.show()
 
 
-def plot_best(self):
-    """Plots the best-performing individual's fitness for each generation and saves it to a .png file"""
-    t = np.arange(self.generations + 1)
-    fig, ax = plt.subplots(1)
-    ax.plot(t, self.upper, label='Best performing individual')
-    ax.legend(loc='lower right')
-    ax.set_xlabel('Generations')
-    ax.set_ylabel('Fitness')
-    ax.set_title('Best individuals of %s %s %s %s with a \u03C3 of %s' % (self.PSM, self.RO, self.MO, self.SSM, str(self.std)))
-    ax.grid()
-    plt.savefig('individual_assignment/' + experiment_name + '_plot_best.png', dpi=300, bbox_inches='tight')
-    plt.show()
-
-
 # Set hyperparameters
-population_size = 50
-generations = 10
-n_exp = 1
+population_size = 100
+generations = 20
+n_exp = 10
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
-recombination_operator = 'PA'  # Either UC for uniform crossover or PA for partial arithmetic
-mutation_operator = 'RP'  # Either RP for random perturbation or DM for differential mutation
-survivor_selection_mechanism = 'FS'  # Either GS for generational selection or FS for fitness-based selection
 
 mean_list = []
 upper_list = []
-lower_list = []
 best_individuals = []
+
 for experiment in range(n_exp):
-    ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism, recombination_operator,
-            mutation_operator, survivor_selection_mechanism)
+    ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism)
     ea.evolve()
 
     mean_list.append(ea.mean)
     upper_list.append(ea.upper)
-    lower_list.append(ea.lower)
     best_individuals.append(ea.best_candidate)
 
 mean = np.mean(mean_list, axis=0)
 upper = np.mean(upper_list, axis=0)
-lower = np.mean(lower_list, axis=0)
 
-plot_whole(generations, mean, lower, upper)
+plot_whole(generations, mean, upper)
 
 # Have the best solution play against a selected enemy
 mean_individual_gain = []
@@ -324,14 +224,14 @@ mean_individual_gain = []
 for candidate in range(n_exp):
     individual_gain = []
     for i in range(5):
-        sol = np.loadtxt(experiment_name + '/solutions/best_candidate_enemy' + str(ENEMY) + '_' + str(candidate)
+        sol = np.loadtxt(experiment_name + '/solutions_enemy' + str(ENEMY) + '/best_candidate_' + str(candidate)
                          + '.txt')
         result = ENV.play(sol)
         # Individual gain is defined by player energy - enemy energy
         individual_gain.append(result[1] - result[2])
     mean_individual_gain.append(statistics.mean(individual_gain))
 
-# Plot the individual gain  boxplot here
+# Plot the individual gain of the best candidate of the last generation for each experiment
 fig, ax = plt.subplots(1)
 bp = ax.boxplot(mean_individual_gain, patch_artist=True)
 for patch in bp['boxes']:
