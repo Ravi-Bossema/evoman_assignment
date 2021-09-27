@@ -200,7 +200,7 @@ class EA:
             exit()
 
     def fitness_based_selection(self, children):
-        """Selects the best-performing 50% of the population and the offspring to continue into the next generation
+        """Selects the best-performing 33% of the population and the offspring to continue into the next generation
         and randomly samples the remainder"""
         new_gen = np.empty([0, N_VARS])
         new_gen_f = np.empty(0)
@@ -264,6 +264,8 @@ def plot_whole(generations, mean, lower, upper):
     ax.fill_between(t, lower, upper, label='Range of the population')
     ax.legend(loc='lower right')
     ax.set_xlabel('Generations')
+    ax.set_xticks(np.arange(0, generations, 1))
+    ax.set_yticks(np.arange(0, 110, 10))
     ax.set_ylabel('Fitness')
     ax.set_title('Fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
     ax.grid()
@@ -287,11 +289,11 @@ def plot_best(self):
 
 
 # Set hyperparameters
-population_size = 20
+population_size = 50
 generations = 10
-n_exp = 2
+n_exp = 1
 standard_deviation = 0.1  # The factor with which the mutation range is determined
-parent_selection_mechanism = 'RS'  # Either RS for random selection or TS for tournament selection
+parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
 recombination_operator = 'PA'  # Either UC for uniform crossover or PA for partial arithmetic
 mutation_operator = 'RP'  # Either RP for random perturbation or DM for differential mutation
 survivor_selection_mechanism = 'FS'  # Either GS for generational selection or FS for fitness-based selection
@@ -329,5 +331,15 @@ for candidate in range(n_exp):
         individual_gain.append(result[1] - result[2])
     mean_individual_gain.append(statistics.mean(individual_gain))
 
-# Add boxplot here
-print(mean_individual_gain)
+# Plot the individual gain  boxplot here
+fig, ax = plt.subplots(1)
+bp = ax.boxplot(mean_individual_gain, patch_artist=True)
+for patch in bp['boxes']:
+    patch.set_facecolor('blue')
+ax.set_xticklabels(['EA 1'])
+ax.set_ylim([-150, 150])
+ax.set_ylabel('Fitness')
+ax.set_title('Individual gain of best individuals over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
+ax.grid()
+plt.savefig(experiment_name + '/enemy' + str(ENEMY) + '_mean_individual_gain.png', dpi=300, bbox_inches='tight')
+plt.show()
