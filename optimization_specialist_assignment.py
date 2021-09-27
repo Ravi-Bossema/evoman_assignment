@@ -5,6 +5,7 @@ from demo_controller import player_controller
 
 # imports other libs
 import time
+import statistics
 import numpy as np
 from math import fabs,sqrt
 import glob, os
@@ -126,14 +127,14 @@ class EA:
         return children
 
     def survivor_selection(self, children):
-        """Selects the best-performing 33% of the population and the offspring to continue into the next generation
+        """Selects the best-performing 25% of the population and the offspring to continue into the next generation
         and randomly samples the remainder"""
         new_gen = np.empty([0, N_VARS])
         new_gen_f = np.empty(0)
         concat_pop = np.concatenate((self.population, children))
         concat_f = np.concatenate((self.f, self.evaluate(children)))
         order = np.flip(np.argsort(concat_f))
-        for i in range(np.floor_divide(len(order), 3)):
+        for i in range(np.floor_divide(len(order), 4)):
             new_gen = np.append(new_gen, [concat_pop[order[i]]], axis=0)
             new_gen_f = np.append(new_gen_f, [concat_f[order[i]]], axis=0)
         rest = np.random.choice(order[np.floor_divide(len(order), 2):], self.pop_size-len(new_gen), replace=False)
@@ -184,6 +185,8 @@ def plot_whole(gen, m, u):
     ax.legend(loc='lower right')
     ax.set_xlabel('Generations')
     ax.set_ylabel('Fitness')
+    ax.set_xticks(np.arange(0, generations + 1, 1))
+    ax.set_yticks(np.arange(0, 110, 10))
     ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
     ax.grid()
     plt.savefig(experiment_name + '/plot_enemy' + str(ENEMY) + '.png',
@@ -192,9 +195,9 @@ def plot_whole(gen, m, u):
 
 
 # Set hyperparameters
-population_size = 10
-generations = 3
-n_exp = 5
+population_size = 100
+generations = 20
+n_exp = 10
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
 
@@ -214,4 +217,29 @@ mean = np.mean(mean_list, axis=0)
 upper = np.mean(upper_list, axis=0)
 
 plot_whole(generations, mean, upper)
-print(upper)
+
+# Have the best solution play against a selected enemy
+mean_individual_gain = []
+
+for candidate in range(n_exp):
+    individual_gain = []
+    for i in range(5):
+        sol = np.loadtxt(experiment_name + '/solutions_enemy' + str(ENEMY) + '/best_candidate_' + str(candidate)
+                         + '.txt')
+        result = ENV.play(sol)
+        # Individual gain is defined by player energy - enemy energy
+        individual_gain.append(result[1] - result[2])
+    mean_individual_gain.append(statistics.mean(individual_gain))
+
+# Plot the individual gain of the best candidate of the last generation for each experiment
+fig, ax = plt.subplots(1)
+bp = ax.boxplot(mean_individual_gain, patch_artist=True)
+for patch in bp['boxes']:
+    patch.set_facecolor('blue')
+ax.set_xticklabels(['EA 1'])
+ax.set_ylim([-150, 150])
+ax.set_ylabel('Fitness')
+ax.set_title('Individual gain of best individuals over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
+ax.grid()
+plt.savefig(experiment_name + '/enemy' + str(ENEMY) + '_mean_individual_gain.png', dpi=300, bbox_inches='tight')
+plt.show()
