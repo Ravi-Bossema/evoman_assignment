@@ -41,8 +41,8 @@ DOM_U = 1
 class EA:
     def __init__(self, pop_size, std, generations, par, survivor_percentage, parent_k):
         self.pop_size = pop_size
-        self.std = std
         self.generations = generations
+        self.std = std
         self.survivor_selection_percentage = survivor_percentage
         self.tuned_k = parent_k
 
@@ -200,7 +200,7 @@ def plot_whole(gen, m, u):
 
 # Set hyperparameters
 population_size = 10
-generations = 5
+generations = 1
 n_exp = 1
 parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
 # Hyperparameters that are to be tuned with Sequential Parameter Optimization
