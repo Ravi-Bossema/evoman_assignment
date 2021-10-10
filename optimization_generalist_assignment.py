@@ -17,7 +17,7 @@ if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-experiment_name = 'generalist_assignment_RS'
+experiment_name = 'generalist_assignment_TS'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
@@ -39,10 +39,12 @@ DOM_U = 1
 
 
 class EA:
-    def __init__(self, pop_size, std, generations, par):
+    def __init__(self, pop_size, std, generations, par, survivor_percentage, parent_k):
         self.pop_size = pop_size
         self.std = std
         self.generations = generations
+        self.survivor_selection_percentage = survivor_percentage
+        self.tuned_k = parent_k
 
         self.PSM = par
 
@@ -84,7 +86,7 @@ class EA:
         """Returns sets of parents from the entire current population using tournament selection with replacement"""
         parents = []
         for i in range(np.floor_divide(self.pop_size, 2)):
-            k = min(10, self.pop_size)
+            k = min(self.tuned_k, self.pop_size)
             pool1, pool2 = np.random.randint(0, self.pop_size-1, (2, k))
             f1, f2 = -np.inf, -np.inf
             p1, p2 = None, None
@@ -136,7 +138,7 @@ class EA:
         concat_pop = np.concatenate((self.population, children))
         concat_f = np.concatenate((self.f, self.evaluate(children)))
         order = np.flip(np.argsort(concat_f))
-        for i in range(np.floor_divide(len(order), 4)):
+        for i in range(np.floor_divide(len(order), self.survivor_selection_percentage)):
             new_gen = np.append(new_gen, [concat_pop[order[i]]], axis=0)
             new_gen_f = np.append(new_gen_f, [concat_f[order[i]]], axis=0)
         rest = np.random.choice(order[np.floor_divide(len(order), 2):], self.pop_size-len(new_gen), replace=False)
@@ -197,20 +199,22 @@ def plot_whole(gen, m, u):
 
 
 # Set hyperparameters
-population_size = 40
-generations = 40
+population_size = 10
+generations = 5
 n_exp = 1
-standard_deviation = 0.1  # The factor with which the mutation range is determined
 parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
+# Hyper parameters that are to be tuned with Sequential Parameter Optimization
+standard_deviation = 0.1  # The factor with which the mutation range is determined
+survivor_selection_percentage = 4  # Population is divided by this value --> 4 will lead to 25% selected
+parent_selection_k = 10  # Default value is 10
 
 mean_list = []
 upper_list = []
 best_individuals = []
 
 for experiment in range(n_exp):
-    ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism)
+    ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism, survivor_selection_percentage, parent_selection_k)
     ea.evolve()
-
     mean_list.append(ea.mean)
     upper_list.append(ea.upper)
     best_individuals.append(ea.best_candidate)
