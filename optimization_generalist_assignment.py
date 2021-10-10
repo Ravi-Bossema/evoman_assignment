@@ -203,7 +203,7 @@ population_size = 10
 generations = 5
 n_exp = 1
 parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
-# Hyper parameters that are to be tuned with Sequential Parameter Optimization
+# Hyperparameters that are to be tuned with Sequential Parameter Optimization
 standard_deviation = 0.1  # The factor with which the mutation range is determined
 survivor_selection_percentage = 4  # Population is divided by this value --> 4 will lead to 25% selected
 parent_selection_k = 10  # Default value is 10
