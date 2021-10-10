@@ -17,14 +17,16 @@ if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-experiment_name = 'specialist_assignment_RS'
+experiment_name = 'generalist_assignment_RS'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMY = 8
+ENEMIES = [1, 8]
+
 ENV = Environment(experiment_name=experiment_name,
-                  enemies=[ENEMY],
+                  enemies=ENEMIES,
+                  multiplemode="yes",
                   playermode="ai",
                   player_controller=player_controller(N_HIDDEN_NEURONS),
                   enemymode="static",
@@ -163,9 +165,9 @@ class EA:
         self.best_candidate = self.population[0]
 
         # Save the best solution of the last generation for testing
-        if not os.path.exists(experiment_name + '/solutions_enemy' + str(ENEMY)):
-            os.makedirs(experiment_name + '/solutions_enemy' + str(ENEMY))
-        np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMY) + '/best_candidate_' + str(experiment)
+        if not os.path.exists(experiment_name + '/solutions_enemy' + str(ENEMIES)):
+            os.makedirs(experiment_name + '/solutions_enemy' + str(ENEMIES))
+        np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMIES) + '/best_candidate_' + str(experiment)
                    + '.txt', self.best_candidate)
 
     def simulation(self, env, x):
@@ -187,19 +189,19 @@ def plot_whole(gen, m, u):
     ax.set_ylabel('Fitness')
     ax.set_xticks(np.arange(0, generations + 1, 1))
     ax.set_yticks(np.arange(0, 110, 10))
-    ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMY))
+    ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMIES))
     ax.grid()
-    plt.savefig(experiment_name + '/plot_enemy' + str(ENEMY) + '.png',
+    plt.savefig(experiment_name + '/plot_enemy' + str(ENEMIES) + '.png',
                 dpi=300, bbox_inches='tight')
     plt.show()
 
 
 # Set hyperparameters
-population_size = 100
-generations = 20
-n_exp = 10
+population_size = 40
+generations = 40
+n_exp = 1
 standard_deviation = 0.1  # The factor with which the mutation range is determined
-parent_selection_mechanism = 'RS'  # Either RS for random selection or TS for tournament selection
+parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
 
 mean_list = []
 upper_list = []
