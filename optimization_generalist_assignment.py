@@ -22,7 +22,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMIES = [1, 8]
+ENEMIES = [1, 3, 6]
 
 ENV = Environment(experiment_name=experiment_name,
                   enemies=ENEMIES,
