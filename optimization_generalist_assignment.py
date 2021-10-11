@@ -22,7 +22,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMIES = [1, 3, 6]
+ENEMIES = [1, 6]
 
 ENV = Environment(experiment_name=experiment_name,
                   enemies=ENEMIES,
@@ -39,14 +39,12 @@ DOM_U = 1
 
 
 class EA:
-    def __init__(self, pop_size, std, generations, par, survivor_percentage, parent_k):
+    def __init__(self, pop_size, std, generations, survivor_percentage, parent_k):
         self.pop_size = pop_size
         self.generations = generations
         self.std = std
         self.survivor_selection_percentage = survivor_percentage
         self.tuned_k = parent_k
-
-        self.PSM = par
 
         # Initialize population
         self.population = np.random.uniform(DOM_L, DOM_U, (pop_size, N_VARS))
@@ -63,26 +61,6 @@ class EA:
 
     # Parent Selection
     def parent_selection(self):
-        """Returns a list containing sets of two parents in accordance with the chosen parent selection mechanism"""
-        if self.PSM == 'RS':
-            return self.random_parent_selection()
-        elif self.PSM == 'TS':
-            return self.tournament_parent_selection()
-        else:
-            print("Please choose a parent_selection_mechanism of RS for random selection or TS for tournament selection")
-            exit()
-
-    def random_parent_selection(self):
-        """Returns sets of two parents from the entire current population randomly without replacement"""
-        parents = []
-        population = list(self.population)
-        for i in range(np.floor_divide(self.pop_size, 2)):
-            i1, i2 = np.random.randint(0, len(population)-1, 2)
-            couple = [population.pop(i1), population.pop(i2)]
-            parents.append(couple)
-        return parents
-
-    def tournament_parent_selection(self):
         """Returns sets of parents from the entire current population using tournament selection with replacement"""
         parents = []
         for i in range(np.floor_divide(self.pop_size, 2)):
@@ -180,49 +158,49 @@ class EA:
         return np.array(list(map(lambda y: self.simulation(ENV, y), x)))
 
 
-def plot_whole(gen, m, u):
-    """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
-    t = np.arange(gen + 1)
-    fig, ax = plt.subplots(1)
-    ax.plot(t, m, label='Mean')
-    ax.plot(t, u, label='Maximum')
-    ax.legend(loc='lower right')
-    ax.set_xlabel('Generations')
-    ax.set_ylabel('Fitness')
-    ax.set_xticks(np.arange(0, generations + 1, 1))
-    ax.set_yticks(np.arange(0, 110, 10))
-    ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMIES))
-    ax.grid()
-    plt.savefig(experiment_name + '/plot_enemy' + str(ENEMIES) + '.png',
-                dpi=300, bbox_inches='tight')
-    plt.show()
+if __name__ == '__main__':
+    def plot_whole(gen, m, u):
+        """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
+        t = np.arange(gen + 1)
+        fig, ax = plt.subplots(1)
+        ax.plot(t, m, label='Mean')
+        ax.plot(t, u, label='Maximum')
+        ax.legend(loc='lower right')
+        ax.set_xlabel('Generations')
+        ax.set_ylabel('Fitness')
+        ax.set_xticks(np.arange(0, generations + 1, 1))
+        ax.set_yticks(np.arange(0, 110, 10))
+        ax.set_title('Average fitness over ' + str(n_exp) + ' experiments for enemy ' + str(ENEMIES))
+        ax.grid()
+        plt.savefig(experiment_name + '/plot_enemy' + str(ENEMIES) + '.png',
+                    dpi=300, bbox_inches='tight')
+        plt.show()
 
 
-# Set hyperparameters
-population_size = 10
-generations = 1
-n_exp = 1
-parent_selection_mechanism = 'TS'  # Either RS for random selection or TS for tournament selection
-# Hyperparameters that are to be tuned with Sequential Parameter Optimization
-standard_deviation = 0.1  # The factor with which the mutation range is determined
-survivor_selection_percentage = 4  # Population is divided by this value --> 4 will lead to 25% selected
-parent_selection_k = 10  # Default value is 10
+    # Set hyperparameters
+    population_size = 10
+    generations = 1
+    n_exp = 1
+    # Hyperparameters that are to be tuned with Sequential Parameter Optimization
+    standard_deviation = 0.1  # The factor with which the mutation range is determined
+    survivor_selection_percentage = 4  # Population is divided by this value --> 4 will lead to 25% selected
+    parent_selection_k = 10  # Default value is 10
 
-mean_list = []
-upper_list = []
-best_individuals = []
+    mean_list = []
+    upper_list = []
+    best_individuals = []
 
-for experiment in range(n_exp):
-    ea = EA(population_size, standard_deviation, generations, parent_selection_mechanism, survivor_selection_percentage, parent_selection_k)
-    ea.evolve()
-    mean_list.append(ea.mean)
-    upper_list.append(ea.upper)
-    best_individuals.append(ea.best_candidate)
+    for experiment in range(n_exp):
+        ea = EA(population_size, standard_deviation, generations, survivor_selection_percentage, parent_selection_k)
+        ea.evolve()
+        mean_list.append(ea.mean)
+        upper_list.append(ea.upper)
+        best_individuals.append(ea.best_candidate)
 
-mean = np.mean(mean_list, axis=0)
-upper = np.mean(upper_list, axis=0)
+    mean = np.mean(mean_list, axis=0)
+    upper = np.mean(upper_list, axis=0)
 
-plot_whole(generations, mean, upper)
+    plot_whole(generations, mean, upper)
 
-"""To generate the boxplots for evaluating the best individuals 
-at the end of an experiment, run: run_best_candidates.py"""
+    """To generate the boxplots for evaluating the best individuals 
+    at the end of an experiment, run: run_best_candidates.py"""
