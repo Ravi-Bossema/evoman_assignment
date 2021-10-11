@@ -4,7 +4,7 @@ from skopt.space import Real, Integer
 from skopt.utils import use_named_args
 from skopt import gp_minimize
 
-param_control = False
+param_control = True
 
 n = 0
 space = [Real(0.01, 0.5, name='std'),
@@ -24,8 +24,10 @@ def objective(**params):
         std, survivor_select, parent_k, n_generations = params.values()
 
     population_size = 220 / (n_generations+1)
-
+    
+    global n
     print('-------------------- TUNING RUN ' + str(n) + ' --------------------')
+    n += 1
 
     ea = EA(population_size, std, n_generations, survivor_select, parent_k, mut_step)
     ea.evolve()
