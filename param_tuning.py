@@ -23,8 +23,8 @@ def objective(**params):
     else:
         std, survivor_select, parent_k, n_generations = params.values()
 
-    population_size = 220 / (n_generations+1)
-    
+    population_size = int(220 / (n_generations+1))
+
     global n
     print('-------------------- TUNING RUN ' + str(n) + ' --------------------')
     n += 1

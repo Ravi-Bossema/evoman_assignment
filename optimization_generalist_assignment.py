@@ -17,7 +17,7 @@ if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-experiment_name = 'generalist_assignment_TS'
+experiment_name = 'generalist_assignment_PC'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
@@ -143,13 +143,17 @@ class EA:
             self.lower.append((np.amin(plot_f)))
 
             self.std += self.mutation_step_size     # For parameter control
-        self.best_candidate = self.population[0]
+            self.std = max(0.01, self.std)
 
         # Save the best solution of the last generation for testing
         if not os.path.exists(experiment_name + '/solutions_enemy' + str(ENEMIES)):
             os.makedirs(experiment_name + '/solutions_enemy' + str(ENEMIES))
         np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMIES) + '/best_candidate_' + str(experiment)
-                   + '.txt', self.best_candidate)
+                   + '.txt', self.population[0])
+        np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMIES) + '/mean_list_' + str(experiment)
+                   + '.txt', self.mean)
+        np.savetxt(experiment_name + '/solutions_enemy' + str(ENEMIES) + '/upper_list_' + str(experiment)
+                   + '.txt', self.upper)
 
     def simulation(self, env, x):
         f, p, e, t = env.play(pcont=x)
@@ -179,25 +183,23 @@ if __name__ == '__main__':
 
 
     # Set hyperparameters
-    population_size = 10
-    generations = 1
-    n_exp = 1
+    population_size = 64
+    generations = 10
+    n_exp = 3
     # Hyperparameters that are to be tuned with Sequential Parameter Optimization
-    standard_deviation = 0.2  # The factor with which the mutation range is determined
-    mut_step = 0
-    survivor_selection_percentage = 4  # Population is divided by this value --> 4 will lead to 25% selected
-    parent_selection_k = 10  # Default value is 10
+    standard_deviation = 0.091309  # The factor with which the mutation range is determined
+    mut_step = -0.001534
+    survivor_selection_percentage = 13  # Population is divided by this value --> 4 will lead to 25% selected
+    parent_selection_k = 12  # Default value is 10
 
     mean_list = []
     upper_list = []
-    best_individuals = []
 
     for experiment in range(n_exp):
         ea = EA(population_size, standard_deviation, generations, survivor_selection_percentage, parent_selection_k, mut_step)
         ea.evolve()
         mean_list.append(ea.mean)
         upper_list.append(ea.upper)
-        best_individuals.append(ea.best_candidate)
 
     mean = np.mean(mean_list, axis=0)
     upper = np.mean(upper_list, axis=0)
