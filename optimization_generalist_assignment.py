@@ -39,12 +39,13 @@ DOM_U = 1
 
 
 class EA:
-    def __init__(self, pop_size, std, generations, survivor_percentage, parent_k):
+    def __init__(self, pop_size, std, generations, survivor_percentage, parent_k, mut_step):
         self.pop_size = pop_size
         self.generations = generations
         self.std = std
         self.survivor_selection_percentage = survivor_percentage
         self.tuned_k = parent_k
+        self.mutation_step_size = mut_step
 
         # Initialize population
         self.population = np.random.uniform(DOM_L, DOM_U, (pop_size, N_VARS))
@@ -96,14 +97,13 @@ class EA:
         to said parameter.
         Returns the mutated population pop"""
 
-        mutation_range = (DOM_U - DOM_L) * self.std
         for i in range(len(children)):
             ind = children[i]
             for param in range(N_VARS):
                 # Since some domains, in particular the domain of ALPHA, are larger than others,
                 # the mutation for those parameters should also be larger. Thus I set the mutation
                 # range at std times the size of the domain
-                mutation = np.random.normal(0, mutation_range)
+                mutation = np.random.normal(0, self.std)
                 ind[param] = min(max(ind[param] + mutation, -1), 1)
             children[i] = ind
         return children
@@ -142,6 +142,7 @@ class EA:
             self.upper.append(np.amax(plot_f))
             self.lower.append((np.amin(plot_f)))
 
+            self.std += self.mutation_step_size     # For parameter control
         self.best_candidate = self.population[0]
 
         # Save the best solution of the last generation for testing
@@ -182,7 +183,8 @@ if __name__ == '__main__':
     generations = 1
     n_exp = 1
     # Hyperparameters that are to be tuned with Sequential Parameter Optimization
-    standard_deviation = 0.1  # The factor with which the mutation range is determined
+    standard_deviation = 0.2  # The factor with which the mutation range is determined
+    mut_step = 0
     survivor_selection_percentage = 4  # Population is divided by this value --> 4 will lead to 25% selected
     parent_selection_k = 10  # Default value is 10
 
@@ -191,7 +193,7 @@ if __name__ == '__main__':
     best_individuals = []
 
     for experiment in range(n_exp):
-        ea = EA(population_size, standard_deviation, generations, survivor_selection_percentage, parent_selection_k)
+        ea = EA(population_size, standard_deviation, generations, survivor_selection_percentage, parent_selection_k, mut_step)
         ea.evolve()
         mean_list.append(ea.mean)
         upper_list.append(ea.upper)
