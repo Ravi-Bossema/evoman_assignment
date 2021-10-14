@@ -22,7 +22,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 N_HIDDEN_NEURONS = 10
-ENEMIES = [1, 6]
+ENEMIES = [6,7,8]
 
 ENV = Environment(experiment_name=experiment_name,
                   enemies=ENEMIES,
@@ -183,14 +183,14 @@ if __name__ == '__main__':
 
 
     # Set hyperparameters
-    population_size = 64
-    generations = 10
-    n_exp = 3
+    population_size = 132
+    generations = 12
+    n_exp = 10
     # Hyperparameters that are to be tuned with Sequential Parameter Optimization
     standard_deviation = 0.091309  # The factor with which the mutation range is determined
     mut_step = -0.001534
-    survivor_selection_percentage = 13  # Population is divided by this value --> 4 will lead to 25% selected
-    parent_selection_k = 12  # Default value is 10
+    survivor_selection_percentage = 13  # Population is divided by this value --> determined by parameter tuning
+    parent_selection_k = 12  # value determined by parameter tuning
 
     mean_list = []
     upper_list = []
