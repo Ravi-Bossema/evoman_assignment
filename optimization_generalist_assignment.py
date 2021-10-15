@@ -164,12 +164,14 @@ class EA:
 
 
 if __name__ == '__main__':
-    def plot_whole(gen, m, u):
+    def plot_whole(gen, m, m_std, u, u_std):
         """Plots the mean fitness and fitness range of each generation and saves it to a .png file"""
         t = np.arange(gen + 1)
         fig, ax = plt.subplots(1)
         ax.plot(t, m, label='Mean')
+        ax.fill_between(t, m+m_std, m-m_std, facecolor='lightskyblue')
         ax.plot(t, u, label='Maximum')
+        ax.fill_between(t, u+u_std, u-u_std, facecolor='moccasin')
         ax.legend(loc='lower right')
         ax.set_xlabel('Generations')
         ax.set_ylabel('Fitness')
@@ -189,22 +191,28 @@ if __name__ == '__main__':
     # Hyperparameters that are to be tuned with Sequential Parameter Optimization
     standard_deviation = 0.091309  # The factor with which the mutation range is determined
     mut_step = -0.001534
-    survivor_selection_percentage = 13  # Population is divided by this value --> determined by parameter tuning
-    parent_selection_k = 12  # value determined by parameter tuning
+    survivor_selection_percentage = 13  # Population is divided by this value --> 4 will lead to 25% selected
+    parent_selection_k = 12  # Default value is 10
 
     mean_list = []
     upper_list = []
 
     for experiment in range(n_exp):
-        ea = EA(population_size, standard_deviation, generations, survivor_selection_percentage, parent_selection_k, mut_step)
-        ea.evolve()
-        mean_list.append(ea.mean)
-        upper_list.append(ea.upper)
+        #ea = EA(population_size, standard_deviation, generations, survivor_selection_percentage, parent_selection_k, mut_step)
+        #ea.evolve()
+        mean = np.loadtxt(experiment_name + '/solutions_enemy' + str(ENEMIES) + '/mean_list_' + str(experiment)
+                   + '.txt')
+        mean_list.append(mean)
+        upper = np.loadtxt(experiment_name + '/solutions_enemy' + str(ENEMIES) + '/upper_list_' + str(experiment)
+                          + '.txt')
+        upper_list.append(upper)
 
+    mean_std = np.std(mean_list, axis=0)
     mean = np.mean(mean_list, axis=0)
+    upper_std = np.std(upper_list, axis=0)
     upper = np.mean(upper_list, axis=0)
 
-    plot_whole(generations, mean, upper)
+    plot_whole(generations, mean, mean_std, upper, upper_std)
 
     """To generate the boxplots for evaluating the best individuals 
     at the end of an experiment, run: run_best_candidates.py"""
