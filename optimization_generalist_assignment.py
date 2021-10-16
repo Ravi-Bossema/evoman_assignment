@@ -17,7 +17,7 @@ if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-experiment_name = 'generalist_assignment_PC'
+experiment_name = 'generalist_assignment_TS'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
@@ -185,8 +185,8 @@ if __name__ == '__main__':
 
 
     # Set hyperparameters
-    population_size = 132
-    generations = 12
+    population_size = 94
+    generations = 18
     n_exp = 10
     # Hyperparameters that are to be tuned with Sequential Parameter Optimization
     standard_deviation = 0.091309  # The factor with which the mutation range is determined
